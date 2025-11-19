@@ -1,0 +1,6 @@
+global-exclude __pycache__
+global-exclude *.py[co]
+prune venv
+prune outputs
+exclude shopee_item_mapping.xlsx
+exclude *.xlsx
