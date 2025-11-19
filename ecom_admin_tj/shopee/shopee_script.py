@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 import sys
 from pathlib import Path
+import datetime
 
 # Get the directory where this script is located
 SCRIPT_DIR = Path(__file__).parent
@@ -72,17 +73,36 @@ def calculate_invoice(merge_df, buyer_shipping_fee) -> pd.DataFrame:
     
     return invoice_df
 
-def load_main_df(input_file: str) -> pd.DataFrame:
-    cols = ['หมายเลขคำสั่งซื้อ', 'เลขอ้างอิง Parent SKU',  'ชื่อสินค้า', 
-            'ราคาตั้งต้น', 'ราคาขาย', 'จำนวน', 'ราคาขายสุทธิ', 'ค่าจัดส่งที่ชำระโดยผู้ซื้อ', 
-            'ค่าจัดส่งที่ Shopee ออกให้โดยประมาณ', 'ผู้ซื้อร้องขอใบกำกับภาษี', 'วันที่คาดว่าจะทำการจัดส่งสินค้า']
-    ori_df = pd.read_excel(input_file, sheet_name='orders', usecols=cols)
+def load_main_df(input_file: str, shipping_date: datetime=None) -> pd.DataFrame:
+    # Required columns
+    required_cols = ['หมายเลขคำสั่งซื้อ', 'เลขอ้างอิง Parent SKU',  'ชื่อสินค้า', 
+                     'ราคาตั้งต้น', 'ราคาขาย', 'จำนวน', 'ราคาขายสุทธิ', 'ค่าจัดส่งที่ชำระโดยผู้ซื้อ', 
+                     'ค่าจัดส่งที่ Shopee ออกให้โดยประมาณ', 'ผู้ซื้อร้องขอใบกำกับภาษี', 'วันที่คาดว่าจะทำการจัดส่งสินค้า']
+    
+    # Try to read with cancellation reason column, if not exists, read without it
+    try:
+        ori_df = pd.read_excel(input_file, sheet_name='orders', usecols=required_cols + ['เหตุผลในการยกเลิกคำสั่งซื้อ'])
+        has_cancel_reason = True
+    except ValueError:
+        # Column doesn't exist, read without it
+        ori_df = pd.read_excel(input_file, sheet_name='orders', usecols=required_cols)
+        has_cancel_reason = False
+    
     ori_df.dropna(subset=['หมายเลขคำสั่งซื้อ'], inplace=True)
     ori_df['ราคาขายสุทธิ'] = ori_df['ราคาขายสุทธิ'].astype(np.float64)
     ori_df['วันที่คาดว่าจะทำการจัดส่งสินค้า'] = pd.to_datetime(ori_df['วันที่คาดว่าจะทำการจัดส่งสินค้า'], errors='coerce')
     # today is first row in df
-    today = ori_df['วันที่คาดว่าจะทำการจัดส่งสินค้า'].iloc[0]
-    today_df = ori_df[ori_df['วันที่คาดว่าจะทำการจัดส่งสินค้า'] == today]
+    if shipping_date is not None:
+        today = shipping_date
+    else:
+        today = ori_df['วันที่คาดว่าจะทำการจัดส่งสินค้า'].iloc[0]
+    # check only date equal (ignore time part)
+    today_df = ori_df[ori_df['วันที่คาดว่าจะทำการจัดส่งสินค้า'].dt.date == today.date()]
+    
+    # Filter out canceled orders based on cancellation reason (only if column exists)
+    if has_cancel_reason:
+        today_df = today_df[today_df['เหตุผลในการยกเลิกคำสั่งซื้อ'].isna()]
+    
     # read canceled sheets
     try :
         canceled_df = pd.read_excel(input_file, sheet_name='canceled_orders')
@@ -142,11 +162,21 @@ def main() -> None:
     '''
     # Read file from argument
     if len(sys.argv) < 2:
-        print('Usage: python lab_script.py <shopee_orders_sample.xlsx>')
+        print('Usage: python ecom_admin_tj.shopee <shopee20251118_sample.xlsx>')
         sys.exit(1)
     input_file: str = sys.argv[1]
     print(f'Reading input file: {input_file}')
-    to_day_orders_df: pd.DataFrame = load_main_df(input_file)
+    # get sys.argv 2 for shipping date format YYYY-MM-DD
+    shipping_date: datetime = None
+    try:
+        if len(sys.argv) >= 3:
+            shipping_date = datetime.datetime.strptime(sys.argv[2], '%Y-%m-%d')
+
+    except ValueError:
+        print('Error: Invalid date format. Please use YYYY-MM-DD.')
+        sys.exit(1)
+        
+    to_day_orders_df: pd.DataFrame = load_main_df(input_file, shipping_date)
     
     # Load mapping dataframe
     mapping_df: pd.DataFrame = load_mapping_df()

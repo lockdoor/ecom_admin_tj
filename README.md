@@ -17,5 +17,9 @@ pip install ./dist/ecom_admin_tj-0.0.1.tar.gz
 
 ## To use package for shopee
 ```
-python -m ecom_admin_tj.shopee [example_file.xlsx]
+python -m ecom_admin_tj.shopee [example_file.xlsx] optional[YYYY-MM-DD]
 ```
+
+รองรับ excel 2 อย่าง
+- ปกติ มีการสร้าง excel ก่อนขนส่งมารับ
+- ไม่ปกติ ขนส่งมารับสร้าง excel ทีหลัง
