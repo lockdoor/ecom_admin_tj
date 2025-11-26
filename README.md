@@ -24,6 +24,7 @@ pip install ./dist/ecom_admin_tj-0.0.1.tar.gz
 ## install from github
 ```
 pip install git+https://github.com/lockdoor/ecom_admin_tj.git
+pip install git+https://github.com/lockdoor/ecom_admin_tj.git@v0.0.3
 ```
 
 ## To use package for shopee
@@ -42,3 +43,8 @@ python -m ecom_admin_tj.shopee [example_file.xlsx] optional[YYYY-MM-DD]
 - ecom_admin_tj.tiktok.mapping.tiktok_product_local_products_list.json
 - ecom_admin_tj.lazada.lazada_item_mapping.xlsx
 - ecom_admin_tj.lazada.mapping.lazada_products.xlsx
+
+## Windows Lib path
+```
+Users\[username]\AppData\Local\Python\[python version]\Lib\site-packages
+```

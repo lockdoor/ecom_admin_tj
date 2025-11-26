@@ -13,6 +13,7 @@ TOTAL = 'TOTAL'
 # setup mapping_df
 def load_mapping_df() -> pd.DataFrame:
     mapping_type_dict = {
+        'platform_item_id': str,
         'platform_sku': str,
         'platform_item_name': str,
         'stock_item_id': str,
@@ -33,7 +34,7 @@ def split_with_ratio(df) -> tuple[pd.DataFrame, pd.DataFrame]:
     ratio_not_1_df = df[df['ratio'] != 1]
     return ratio_1_df, ratio_not_1_df
 
-def calculate_invoice(merge_df, buyer_shipping_fee) -> pd.DataFrame:
+def calculate_invoice(merge_df: pd.DataFrame, buyer_shipping_fee: float=0.0) -> pd.DataFrame:
     '''Use calculate_invoice to generate invoice dataframe from order dataframe
     Before using this function dataframe must be merged with mapping dataframe
     
@@ -51,7 +52,7 @@ def calculate_invoice(merge_df, buyer_shipping_fee) -> pd.DataFrame:
     for _, row in ratio_not_1_df.iterrows():
         stock_item_id = row['stock_item_id']
         stock_item_name = row['stock_item_name']
-        quantity = row['multiplier']
+        quantity = row['จำนวนรวม']
         total_price = row['ราคาขายสุทธิ']
         ratio = row['ratio']
         
@@ -64,6 +65,8 @@ def calculate_invoice(merge_df, buyer_shipping_fee) -> pd.DataFrame:
         else:
             # print(f'stock_item_id: {stock_item_id}, ratio: {ratio}, quantity: {quantity}, adj_total_price: {adj_total_price}')
             invoice_df.loc[stock_item_id] = [stock_item_name, quantity, adj_total_price]
+        # debug print
+        # print(f'Processed stock_item_id: {stock_item_name}, ratio: {ratio}, quantity: {quantity}, adj_total_price: {adj_total_price}')
     
     # Add buyer shipping fee row
     invoice_df.loc[SHIPPING_FEE_ITEM_ID] = ['ค่าจัดส่งที่ชำระโดยผู้ซื้อ', 1, buyer_shipping_fee]

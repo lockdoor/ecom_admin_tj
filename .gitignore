@@ -5,6 +5,7 @@ venv/
 .DS_Store
 .secret
 lab.ipynb
+*.ipynb
 
 # Ignore json files
 stock_items.csv

@@ -2,11 +2,13 @@ import pandas as pd
 import numpy as np
 import sys
 import warnings
+from pathlib import Path
 
 # Suppress openpyxl warning about default style
 warnings.filterwarnings('ignore', category=UserWarning, module='openpyxl')
 
-MAPPING_FILE = "./ecom_admin_tj/lazada/lazada_item_mapping.xlsx"
+SCRIPT_DIR = Path(__file__).parent
+MAPPING_FILE = SCRIPT_DIR / "lazada_item_mapping.xlsx"
 ORIGINAL_SHEET_NAME = "sheet1"
 
 def load_mapping() -> pd.DataFrame:
