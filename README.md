@@ -7,6 +7,9 @@ Support shopee only
 ## Version 0.0.2
 Support tiktok
 
+## Version 0.0.3
+Support lazada
+
 ## To build package
 ```
 python -m pip install --upgrade build
