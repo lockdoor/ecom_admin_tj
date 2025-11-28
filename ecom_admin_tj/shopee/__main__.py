@@ -1,4 +1,5 @@
-from .shopee_script import main
+from .shopee import Shopee
 
-if __name__ == '__main__':
-    main()
+if __name__ == "__main__":
+    shopee = Shopee.from_args()
+    shopee.process()

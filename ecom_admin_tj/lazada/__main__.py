@@ -1,4 +1,5 @@
-from .lazada_script import main
+from .lazada import Lazada
 
 if __name__ == "__main__":
-    main()
+    lazada = Lazada.from_args()
+    lazada.process()

@@ -1,4 +1,5 @@
-from .tiktok_script import main
+from .tiktok import Tiktok
 
 if __name__ == '__main__':
-    main()
+    tiktok = Tiktok.from_args()
+    tiktok.process()
