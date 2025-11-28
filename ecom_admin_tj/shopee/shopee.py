@@ -53,21 +53,19 @@ class Shopee(Base):
         
         # Try to read with cancellation reason column, if not exists, read without it
         if self.original_df is None:
-            try:
-                self.original_df = pd.read_excel(
-                    self.input_file, sheet_name=self.ORIGINAL_SHEET_NAME, 
-                    usecols=required_cols + ['เหตุผลในการยกเลิกคำสั่งซื้อ'])
-                has_cancel_reason = True
-            except ValueError:
-                # Column doesn't exist, read without it
-                self.original_df = pd.read_excel(
-                    self.input_file, sheet_name=self.ORIGINAL_SHEET_NAME, 
-                    usecols=required_cols)
-                has_cancel_reason = False
+            self.original_df = pd.read_excel(
+                self.input_file, sheet_name=self.ORIGINAL_SHEET_NAME)
         
-        self.main_df = self.original_df.dropna(subset=['หมายเลขคำสั่งซื้อ']).copy()
-        self.main_df['ราคาขายสุทธิ'] = self.original_df['ราคาขายสุทธิ'].astype(np.float64)
-        self.main_df['วันที่คาดว่าจะทำการจัดส่งสินค้า'] = pd.to_datetime(self.original_df['วันที่คาดว่าจะทำการจัดส่งสินค้า'], errors='coerce')
+        if 'เหตุผลในการยกเลิกคำสั่งซื้อ' in self.original_df.columns:
+            self.main_df = self.original_df[required_cols + ['เหตุผลในการยกเลิกคำสั่งซื้อ']].copy()
+            has_cancel_reason = True
+        else:
+            self.main_df = self.original_df[required_cols].copy()
+            has_cancel_reason = False
+
+        self.main_df = self.main_df.dropna(subset=['หมายเลขคำสั่งซื้อ']).copy()
+        self.main_df['ราคาขายสุทธิ'] = self.main_df['ราคาขายสุทธิ'].astype(np.float64)
+        self.main_df['วันที่คาดว่าจะทำการจัดส่งสินค้า'] = pd.to_datetime(self.main_df['วันที่คาดว่าจะทำการจัดส่งสินค้า'], errors='coerce')
 
         # today is first row in df
         if self.shipping_date is not None:
@@ -91,7 +89,6 @@ class Shopee(Base):
         
         return self.main_df
     
-    #TODO
     def calculate_invoice(self, merge_df: pd.DataFrame, buyer_shipping_fee: float=0.0) -> pd.DataFrame:
         '''Use calculate_invoice to generate invoice dataframe from order dataframe
         Before using this function dataframe must be merged with mapping dataframe

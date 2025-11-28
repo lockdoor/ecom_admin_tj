@@ -56,14 +56,15 @@ class Lazada(Base):
             'itemName': str,
             'lazadaSku': str,
         }
-        self.original_df = pd.read_excel(self.input_file, sheet_name=self.ORIGINAL_SHEET_NAME)
+        self.original_df = pd.read_excel(
+            self.input_file, 
+            sheet_name=self.ORIGINAL_SHEET_NAME,
+            dtype=dtype_dict)
         self.main_df = pd.read_excel(
             self.input_file, 
             sheet_name=self.ORIGINAL_SHEET_NAME, 
             dtype=dtype_dict, 
-            usecols=columns, 
-            engine='openpyxl',
-            )
+            usecols=columns)
         self.main_df.fillna({'sellerDiscountTotal': 0}, inplace=True)
         self.main_df['lazadaSku'] = self.main_df['lazadaSku'].map(lambda x: x.split('_')[0])
         
