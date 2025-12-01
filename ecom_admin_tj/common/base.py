@@ -25,6 +25,7 @@ class Base(ABC):
         self.mapping_df: pd.DataFrame | None = None
         self.original_df: pd.DataFrame | None = None
         self.main_df: pd.DataFrame | None = None
+        self.finance_df: pd.DataFrame | None = None
         self.merged_df: pd.DataFrame | None = None
         self.invoice_df: pd.DataFrame | None = None
         self.canceled_orders_df: pd.DataFrame | None = None
@@ -48,15 +49,20 @@ class Base(ABC):
         """Load main data from input file"""
         pass
 
+    @abstractmethod
+    def calculate_finance_df(self) -> pd.DataFrame:
+        """Calculate finance dataframe from main_df dataframe"""
+        pass
+
     def load_canceled_orders(self) -> pd.DataFrame:
         """Load canceled orders from input file if exists"""
         if self.canceled_orders_df is None:
             try :
-                self.canceled_orders_df = pd.read_excel(self.input_file, sheet_name='canceled_orders')
+                self.canceled_orders_df = pd.read_excel(self.input_file, sheet_name='canceled_orders', dtype={'canceled_orders_sn': str})
             # ValueError occurs when sheet does not exist
             except (ValueError):
                 print('No canceled orders sheet found. Continuing without excluding any orders.')
-                self.canceled_orders_df = pd.DataFrame(columns=['canceled_orders_sn'])
+                self.canceled_orders_df = pd.DataFrame(columns=['canceled_orders_sn'], dtype=str)
         return self.canceled_orders_df
     
     def merge_mapping(self) -> pd.DataFrame:
@@ -96,6 +102,7 @@ class Base(ABC):
         # Process
         self.merged_df = self.merge_mapping()
         self.invoice_df = self.calculate_invoice()
+        self.finance_df = self.calculate_finance_df()
         
         print(f'Unique order numbers processed: {self.order_sn_unique}')
         

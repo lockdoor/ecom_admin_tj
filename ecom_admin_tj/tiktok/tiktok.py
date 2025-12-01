@@ -45,20 +45,37 @@ class Tiktok(Base):
     
     def load_main_df(self) -> pd.DataFrame:
         """Load main data from Tiktok input file"""
-        self.original_df = pd.read_excel(self.input_file, sheet_name=self.ORIGINAL_SHEET_NAME)
+        type_dict = {
+            'Order ID': str,
+            'SKU ID': str,
+            'Quantity': np.int64,
+            'SKU Unit Original Price': np.float64,
+            'SKU Subtotal Before Discount': np.float64,
+            'SKU Seller Discount': np.float64,
+            'SKU Subtotal After Discount': np.float64,
+            }
+        self.original_df = pd.read_excel(\
+            self.input_file, 
+            sheet_name=self.ORIGINAL_SHEET_NAME, 
+            dtype=type_dict, header=0, 
+            skiprows=[1])
         
         df = self.original_df.copy()
+        
+        # clean dataframe
         df.drop(df.index[0], inplace=True)
+        df = df[df['Cancelation/Return Type'].isna()]
         df.reset_index(inplace=True)
+        
         columns= ['Order ID', 'SKU ID', 'Product Name', 'Quantity', 'SKU Unit Original Price', 'SKU Subtotal Before Discount', 'SKU Seller Discount', 'SKU Subtotal After Discount']
         df = df[columns]
         
-        df['Order ID'] = df['Order ID'].astype(str)
-        df['Quantity'] = df['Quantity'].astype(np.int64)
-        df['SKU Unit Original Price'] = df['SKU Unit Original Price'].astype(np.float64)
-        df['SKU Subtotal Before Discount'] = df['SKU Subtotal Before Discount'].astype(np.float64)
-        df['SKU Seller Discount'] = df['SKU Seller Discount'].astype(np.float64)
-        df['SKU Subtotal After Discount'] = df['SKU Subtotal After Discount'].astype(np.float64)
+        # df['Order ID'] = df['Order ID'].astype(str)
+        # df['Quantity'] = df['Quantity'].astype(np.int64)
+        # df['SKU Unit Original Price'] = df['SKU Unit Original Price'].astype(np.float64)
+        # df['SKU Subtotal Before Discount'] = df['SKU Subtotal Before Discount'].astype(np.float64)
+        # df['SKU Seller Discount'] = df['SKU Seller Discount'].astype(np.float64)
+        # df['SKU Subtotal After Discount'] = df['SKU Subtotal After Discount'].astype(np.float64)
 
         # read canceled sheets
         self.load_canceled_orders()
@@ -96,6 +113,28 @@ class Tiktok(Base):
             self.invoice_df['SKU Seller Discount'].sum()]
         return self.invoice_df
     
+    def calculate_finance_df(self) -> pd.DataFrame:
+        """Calculate finance dataframe from main_df dataframe"""
+        if self.merged_df is None:
+            raise ValueError("Merged dataframe is not available. Please run merge_mapping() first.")
+        
+        self.finance_df = self.merged_df.groupby('Order ID').agg({
+            'SKU Subtotal Before Discount': 'sum',
+            'SKU Seller Discount': 'sum',
+            'SKU Subtotal After Discount': 'sum',   
+        }).reset_index()
+        
+        # Add footer row with totals
+        total_row = {
+            'Order ID': 'TOTAL',
+            'SKU Subtotal Before Discount': self.finance_df['SKU Subtotal Before Discount'].sum(),
+            'SKU Seller Discount': self.finance_df['SKU Seller Discount'].sum(),
+            'SKU Subtotal After Discount': self.finance_df['SKU Subtotal After Discount'].sum(),
+        }
+        self.finance_df.loc[len(self.finance_df)] = total_row
+        
+        return self.finance_df
+    
     def export_excel(self):
         """Export Tiktok invoice to Excel file"""
         with pd.ExcelWriter(self.output_file, engine='openpyxl') as writer:
@@ -105,5 +144,8 @@ class Tiktok(Base):
             # Sheet 2: invoice
             self.invoice_df.to_excel(writer, sheet_name=f'invoice_{self.order_sn_unique}_orders', index=False)
             
-            # Last sheet 1: Canceled orders (ensure string format)
+            # Canceled orders (ensure string format)
             self.canceled_orders_df.to_excel(writer, sheet_name='canceled_orders', index=False)
+            
+            # Finance summary
+            self.finance_df.to_excel(writer, sheet_name='Finance Summary', index=False)

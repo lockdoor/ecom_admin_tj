@@ -89,6 +89,28 @@ class Shopee(Base):
         
         return self.main_df
     
+    def calculate_finance_df(self) -> pd.DataFrame:
+        """Calculate finance dataframe from main_df dataframe"""
+        if self.main_df is None:
+            raise ValueError("main_df is None. Please load main dataframe before calculating finance dataframe.")
+        
+        self.finance_df = self.main_df.groupby('หมายเลขคำสั่งซื้อ').agg({
+            'ราคาขายสุทธิ': 'sum',
+            'ค่าจัดส่งที่ชำระโดยผู้ซื้อ': 'sum',
+            'ค่าจัดส่งที่ Shopee ออกให้โดยประมาณ': 'sum',
+        }).reset_index()
+        
+        # Add footer row with totals
+        total_row = {
+            'หมายเลขคำสั่งซื้อ': 'TOTAL',
+            'ราคาขายสุทธิ': self.finance_df['ราคาขายสุทธิ'].sum(),
+            'ค่าจัดส่งที่ชำระโดยผู้ซื้อ': self.finance_df['ค่าจัดส่งที่ชำระโดยผู้ซื้อ'].sum(),
+            'ค่าจัดส่งที่ Shopee ออกให้โดยประมาณ': self.finance_df['ค่าจัดส่งที่ Shopee ออกให้โดยประมาณ'].sum(),
+        }
+        self.finance_df.loc[len(self.finance_df)] = total_row
+        
+        return self.finance_df
+    
     def calculate_invoice(self, merge_df: pd.DataFrame, buyer_shipping_fee: float=0.0) -> pd.DataFrame:
         '''Use calculate_invoice to generate invoice dataframe from order dataframe
         Before using this function dataframe must be merged with mapping dataframe
@@ -160,11 +182,14 @@ class Shopee(Base):
                 sheet_name = str(group_key).replace('/', '_')[:31]
                 invoice_df.to_excel(writer, sheet_name=sheet_name, index=True)
             
-            # Last sheet 1: Stock deduction summary
+            # Stock deduction summary
             self.deduct_stock_df.to_excel(writer, sheet_name='Stock Deduction', index=True)
             
-            # Last sheet 2: Canceled orders
+            # Canceled orders
             self.canceled_orders_df.to_excel(writer, sheet_name='canceled_orders', index=False)
+            
+            # Finance summary
+            self.finance_df.to_excel(writer, sheet_name='Finance Summary', index=False)
     
     def calculate_group_invoice(self) -> None:
         '''Group by No VAT requested and VAT requested orders
@@ -228,6 +253,7 @@ class Shopee(Base):
         self.merged_df = self.merge_mapping()
         self.calculate_group_invoice()
         self.calculate_total_deduct_stock()
+        self.calculate_finance_df()
         
         # Export
         print(f'Exporting to Excel file: {self.output_file}')

@@ -98,6 +98,27 @@ class Lazada(Base):
         self.invoice_df.columns = ['stock_item_id', 'stock_item_name', 'จำนวนรวม', 'ลูกค้าจ่าย', 'ราคาสุทธิ', 'ส่วนลดรวม']
         return self.invoice_df
 
+    def calculate_finance_df(self) -> pd.DataFrame:
+        """Calculate finance dataframe specific to Lazada"""
+        if self.merged_df is None:
+            raise ValueError("merged_df is not loaded. Please run merge_mapping() first.")
+        self.finance_df = self.merged_df.groupby('orderNumber').agg({
+            'paidPrice': 'sum',
+            'unitPrice': 'sum',
+            'sellerDiscountTotal': 'sum',
+        }).reset_index()
+        
+        # Add footer row with totals
+        total_row = {
+            'orderNumber': 'TOTAL',
+            'paidPrice': self.finance_df['paidPrice'].sum(),
+            'unitPrice': self.finance_df['unitPrice'].sum(),
+            'sellerDiscountTotal': self.finance_df['sellerDiscountTotal'].sum(),
+        }
+        self.finance_df.loc[len(self.finance_df)] = total_row
+        
+        return self.finance_df
+
     def export_excel(self) -> None:
         """Export Lazada invoice to Excel file"""
         with pd.ExcelWriter(self.output_file, engine='openpyxl') as writer:
@@ -107,5 +128,8 @@ class Lazada(Base):
             # Sheet 2: invoice
             self.invoice_df.to_excel(writer, sheet_name=f'invoice_{self.order_sn_unique}_orders', index=False)
             
-            # Last sheet 1: Canceled orders (ensure string format)
+            # Canceled orders (ensure string format)
             self.canceled_orders_df.to_excel(writer, sheet_name='canceled_orders', index=False)
+            
+            # Finance summary
+            self.finance_df.to_excel(writer, sheet_name='Finance Summary', index=False)
