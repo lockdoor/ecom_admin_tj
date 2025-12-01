@@ -6,6 +6,7 @@ venv/
 .secret
 lab.ipynb
 *.ipynb
+*.pdf
 
 # Ignore json files
 stock_items.csv

@@ -48,6 +48,7 @@ class Lazada(Base):
                 'paidPrice', 'unitPrice', 'sellerDiscountTotal', 'itemName', 'lazadaSku']
         dtype_dict = {
             'orderItemId': str,
+            'lazadaId': str,
             'orderNumber': str,
             'invoiceNumber': str,
             'paidPrice': np.float64,
@@ -102,7 +103,7 @@ class Lazada(Base):
         """Calculate finance dataframe specific to Lazada"""
         if self.merged_df is None:
             raise ValueError("merged_df is not loaded. Please run merge_mapping() first.")
-        self.finance_df = self.merged_df.groupby('orderNumber').agg({
+        self.finance_df = self.merged_df.groupby('orderNumber', sort=False).agg({
             'paidPrice': 'sum',
             'unitPrice': 'sum',
             'sellerDiscountTotal': 'sum',

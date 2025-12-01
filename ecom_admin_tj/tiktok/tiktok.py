@@ -54,7 +54,7 @@ class Tiktok(Base):
             'SKU Seller Discount': np.float64,
             'SKU Subtotal After Discount': np.float64,
             }
-        self.original_df = pd.read_excel(\
+        self.original_df = pd.read_excel(
             self.input_file, 
             sheet_name=self.ORIGINAL_SHEET_NAME, 
             dtype=type_dict, header=0, 
@@ -63,19 +63,11 @@ class Tiktok(Base):
         df = self.original_df.copy()
         
         # clean dataframe
-        df.drop(df.index[0], inplace=True)
         df = df[df['Cancelation/Return Type'].isna()]
         df.reset_index(inplace=True)
         
         columns= ['Order ID', 'SKU ID', 'Product Name', 'Quantity', 'SKU Unit Original Price', 'SKU Subtotal Before Discount', 'SKU Seller Discount', 'SKU Subtotal After Discount']
         df = df[columns]
-        
-        # df['Order ID'] = df['Order ID'].astype(str)
-        # df['Quantity'] = df['Quantity'].astype(np.int64)
-        # df['SKU Unit Original Price'] = df['SKU Unit Original Price'].astype(np.float64)
-        # df['SKU Subtotal Before Discount'] = df['SKU Subtotal Before Discount'].astype(np.float64)
-        # df['SKU Seller Discount'] = df['SKU Seller Discount'].astype(np.float64)
-        # df['SKU Subtotal After Discount'] = df['SKU Subtotal After Discount'].astype(np.float64)
 
         # read canceled sheets
         self.load_canceled_orders()
@@ -118,7 +110,7 @@ class Tiktok(Base):
         if self.merged_df is None:
             raise ValueError("Merged dataframe is not available. Please run merge_mapping() first.")
         
-        self.finance_df = self.merged_df.groupby('Order ID').agg({
+        self.finance_df = self.merged_df.groupby('Order ID', sort=False).agg({
             'SKU Subtotal Before Discount': 'sum',
             'SKU Seller Discount': 'sum',
             'SKU Subtotal After Discount': 'sum',   
