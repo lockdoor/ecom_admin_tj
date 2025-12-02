@@ -129,15 +129,38 @@ class Tiktok(Base):
     
     def export_excel(self):
         """Export Tiktok invoice to Excel file"""
+        
+        from openpyxl.worksheet.worksheet import Worksheet
+        
         with pd.ExcelWriter(self.output_file, engine='openpyxl') as writer:
             # Sheet 1: Original orders 
             self.original_df.to_excel(writer, sheet_name=self.ORIGINAL_SHEET_NAME, index=False)
+            original_sheet: Worksheet = writer.sheets[self.ORIGINAL_SHEET_NAME]
+            self._formating_header(original_sheet)
             
             # Sheet 2: invoice
             self.invoice_df.to_excel(writer, sheet_name=f'invoice_{self.order_sn_unique}_orders', index=False)
+            invoice_sheet: Worksheet = writer.sheets[f'invoice_{self.order_sn_unique}_orders']
+            invoice_sheet.column_dimensions['A'].width = 18  # stock_item_id
+            invoice_sheet.column_dimensions['B'].width = 48  # stock_item_name
+            invoice_sheet.column_dimensions['C'].width = 14  # จำนวนรวม
+            invoice_sheet.column_dimensions['D'].width = 14  # SKU Subtotal Before Discount
+            invoice_sheet.column_dimensions['E'].width = 14  # SKU Seller Discount
+            self._formating_header(sheet=invoice_sheet)
+            self._formatting_body(sheet=invoice_sheet, start_row=2, end_row=len(self.invoice_df), start_col=1, end_col=5)
+            self._formatting_footer(sheet=invoice_sheet, footer_row=len(self.invoice_df)+1)
             
             # Canceled orders (ensure string format)
             self.canceled_orders_df.to_excel(writer, sheet_name='canceled_orders', index=False)
+            self._cancel_orders_to_excel(writer)
             
             # Finance summary
             self.finance_df.to_excel(writer, sheet_name='Finance Summary', index=False)
+            finance_sheet: Worksheet = writer.sheets['Finance Summary']
+            finance_sheet.column_dimensions['A'].width = 25  # Order ID
+            finance_sheet.column_dimensions['B'].width = 18  # SKU Subtotal Before Discount
+            finance_sheet.column_dimensions['C'].width = 18  # SKU Seller Discount
+            finance_sheet.column_dimensions['D'].width = 18  # SKU Subtotal After Discount
+            self._formating_header(finance_sheet)
+            self._formatting_body(sheet=finance_sheet, start_row=2, end_row=len(self.finance_df), start_col=1, end_col=4)
+            self._formatting_footer(sheet=finance_sheet, footer_row=len(self.finance_df)+1)

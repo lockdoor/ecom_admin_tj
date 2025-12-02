@@ -162,34 +162,76 @@ class Shopee(Base):
         return invoice_df
 
     def export_excel(self) -> None:
-        """Export original orders and invoices to Excel with multiple sheets
-        
-        Args:
-            invoice_dict (dict[str, pd.DataFrame]): Dictionary of invoice dataframes keyed by group
-            deduct_stock_df (pd.DataFrame): Dataframe summarizing stock deductions
-        """
+        """Export original orders and invoices to Excel with multiple sheets"""
+
+        from openpyxl.worksheet.worksheet import Worksheet
 
         with pd.ExcelWriter(self.output_file, engine='openpyxl') as writer:
             # Sheet 1: Original orders 
             self.original_df.to_excel(writer, sheet_name='orders', index=False)
+            original_sheet: Worksheet = writer.sheets['orders']
+            self._formating_header(original_sheet)
             
             # Sheet 2: To day orders
             self.main_df.to_excel(writer, sheet_name='to_day_orders', index=False)
+            to_day_sheet: Worksheet = writer.sheets['to_day_orders']
+            to_day_sheet.column_dimensions['A'].width = 25  # หมายเลขคำสั่งซื้อ
+            to_day_sheet.column_dimensions['B'].width = 15  # เลขอ้างอิง Parent SKU
+            to_day_sheet.column_dimensions['C'].width = 50  # ชื่อสินค้า
+            to_day_sheet.column_dimensions['D'].width = 10  # ราคาตั้งต้น
+            to_day_sheet.column_dimensions['E'].width = 10  # ราคาขาย
+            to_day_sheet.column_dimensions['F'].width = 10  # จำนวน
+            to_day_sheet.column_dimensions['G'].width = 10  # ราคาขายสุทธิ
+            to_day_sheet.column_dimensions['H'].width = 10  # ค่าจัดส่งที่ชำระโดยผู้ซื้อ
+            to_day_sheet.column_dimensions['I'].width = 10  # ค่าจัดส่งที่ Shopee ออกให้โดยประมาณ
+            to_day_sheet.column_dimensions['J'].width = 10  # ผู้ซื้อร้องขอใบกำกับภาษี  
+            to_day_sheet.column_dimensions['K'].width = 25  # วันที่คาดว่าจะทำการจัดส่งสินค้า
+            self._formating_header(to_day_sheet)
+            
             
             # Sheet 3+: Each invoice
             for group_key, invoice_df in self.invoice_group_dict.items():
                 # Sanitize sheet name (Excel has max 31 chars and no special chars)
                 sheet_name = str(group_key).replace('/', '_')[:31]
                 invoice_df.to_excel(writer, sheet_name=sheet_name, index=True)
+                invoice_sheet: Worksheet = writer.sheets[sheet_name]
+                invoice_sheet.column_dimensions['A'].width = 20  # stock_item_id
+                invoice_sheet.column_dimensions['B'].width = 50  # stock_item_name
+                invoice_sheet.column_dimensions['C'].width = 15  # จำนวนรวม
+                invoice_sheet.column_dimensions['D'].width = 20  # ราคาขายสุทธิ
+                self._formating_header(sheet=invoice_sheet)
+                self._formatting_body(sheet=invoice_sheet, start_row=2, end_row=len(invoice_df), start_col=1, end_col=4)
+                self._formatting_footer(sheet=invoice_sheet, footer_row=len(invoice_df)+1)
+            
             
             # Stock deduction summary
             self.deduct_stock_df.to_excel(writer, sheet_name='Stock Deduction', index=True)
+            stock_sheet: Worksheet = writer.sheets['Stock Deduction']
+            stock_sheet.column_dimensions['A'].width = 20  # stock_item_id
+            stock_sheet.column_dimensions['B'].width = 50  # stock_item_name
+            stock_sheet.column_dimensions['C'].width = 15  # quantity
+            self._formating_header(stock_sheet)
+            self._formatting_body(sheet=stock_sheet, start_row=2, end_row=len(self.deduct_stock_df) + 1, start_col=1, end_col=3)    
             
             # Canceled orders
             self.canceled_orders_df.to_excel(writer, sheet_name='canceled_orders', index=False)
+            self._cancel_orders_to_excel(writer)
             
             # Finance summary
             self.finance_df.to_excel(writer, sheet_name='Finance Summary', index=False)
+            finance_sheet: Worksheet = writer.sheets['Finance Summary']
+            finance_sheet.column_dimensions['A'].width = 25  # หมายเลขคำสั่งซื้อ
+            finance_sheet.column_dimensions['B'].width = 15  # ราคาขายสุทธิ
+            finance_sheet.column_dimensions['C'].width = 15  # ค่าจัดส่งที่ชำระโดยผู้ซื้อ
+            finance_sheet.column_dimensions['D'].width = 20  # ค่าจัดส่งที่ Shopee ออกให้โดยประมาณ
+            self._formating_header(finance_sheet)
+            self._formatting_body(
+                sheet=finance_sheet, 
+                start_row=2, 
+                end_row=len(self.finance_df), 
+                start_col=1, 
+                end_col=4)
+            self._formatting_footer(sheet=finance_sheet, footer_row=len(self.finance_df)+1)
     
     def calculate_group_invoice(self) -> None:
         '''Group by No VAT requested and VAT requested orders
