@@ -98,8 +98,8 @@ class Shopee(Base):
         
         self.finance_df = self.main_df.groupby('หมายเลขคำสั่งซื้อ').agg({
             'ราคาขายสุทธิ': 'sum',
-            'ค่าจัดส่งที่ชำระโดยผู้ซื้อ': 'sum',
-            'ค่าจัดส่งที่ Shopee ออกให้โดยประมาณ': 'sum',
+            'ค่าจัดส่งที่ชำระโดยผู้ซื้อ': 'first',
+            'ค่าจัดส่งที่ Shopee ออกให้โดยประมาณ': 'first',
         }).reset_index()
         
         # Add footer row with totals
