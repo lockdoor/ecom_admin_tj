@@ -66,7 +66,7 @@ class Tiktok(Base):
             # อ่านข้อมูลดิบจาก openpyxl แล้วแปลงเป็น DataFrame เอง
             from openpyxl import load_workbook
 
-            wb = load_workbook('tiktok20251202.xlsx')
+            wb = load_workbook(self.input_file, read_only=True, data_only=True)
             ws = wb.active
 
             # อ่าน header จากแถวที่ 1
