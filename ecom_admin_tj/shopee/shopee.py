@@ -35,6 +35,8 @@ class Shopee(Base):
         self.mapping_df = pd.read_excel(
             self.MAPPING_FILE, sheet_name='Item Mapping', 
             skiprows=1, dtype=mapping_type_dict)
+        # clean mapping_df by dropping rows with any NaN values
+        self.mapping_df.dropna(inplace=True)
         return self.mapping_df
     
     def merge_mapping(self) -> pd.DataFrame:
@@ -249,7 +251,8 @@ class Shopee(Base):
         # Calculate invoices
         for group_key, group_df in self.invoice_group_dict.items():
             print(f'Processing group: {group_key}')
-            buyer_shipping_fee: float = group_df['ค่าจัดส่งที่ชำระโดยผู้ซื้อ'].sum()
+            # buyer_shipping_fee: float = group_df['ค่าจัดส่งที่ชำระโดยผู้ซื้อ'].sum()
+            buyer_shipping_fee: float = group_df.groupby('หมายเลขคำสั่งซื้อ')['ค่าจัดส่งที่ชำระโดยผู้ซื้อ'].first().sum()
             order_invoice_df = self.calculate_invoice(group_df, buyer_shipping_fee)
             self.invoice_group_dict[group_key] = order_invoice_df
             

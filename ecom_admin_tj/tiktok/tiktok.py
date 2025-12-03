@@ -54,16 +54,47 @@ class Tiktok(Base):
             'SKU Seller Discount': np.float64,
             'SKU Subtotal After Discount': np.float64,
             }
+        
         self.original_df = pd.read_excel(
             self.input_file, 
             sheet_name=self.ORIGINAL_SHEET_NAME, 
             dtype=type_dict, header=0, 
             skiprows=[1])
         
+        if "Cancelation/Return Type" not in self.original_df.columns:
+            # ถ้าอ่านด้วย pandas ไม่เจอคอลัมน์ "Cancelation/Return Type"
+            # อ่านข้อมูลดิบจาก openpyxl แล้วแปลงเป็น DataFrame เอง
+            from openpyxl import load_workbook
+
+            wb = load_workbook('tiktok20251202.xlsx')
+            ws = wb.active
+
+            # อ่าน header จากแถวที่ 1
+            headers = []
+            for col in range(1, ws.max_column + 1):
+                header = ws.cell(row=1, column=col).value
+                headers.append(header)
+
+            # print(f"Headers ({len(headers)} columns):")
+            # print(headers[:10])
+
+            # อ่านข้อมูลเริ่มจากแถวที่ 3 (ข้าม header และ description)
+            data = []
+            for row in range(3, ws.max_row + 1):
+                row_data = []
+                for col in range(1, ws.max_column + 1):
+                    cell_value = ws.cell(row=row, column=col).value
+                    row_data.append(cell_value)
+                data.append(row_data)
+
+            # สร้าง DataFrame
+            self.original_df = pd.DataFrame(data, columns=headers)
+            self.original_df = self.original_df.astype(type_dict)
+        
         df = self.original_df.copy()
         
         # clean dataframe
-        df = df[df['Cancelation/Return Type'].isna()]
+        df = df[df["Cancelation/Return Type"].isna()]
         df.reset_index(inplace=True)
         
         columns= ['Order ID', 'SKU ID', 'Product Name', 'Quantity', 'SKU Unit Original Price', 'SKU Subtotal Before Discount', 'SKU Seller Discount', 'SKU Subtotal After Discount']
