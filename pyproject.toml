@@ -28,7 +28,7 @@ exclude = [
 
 [project]
 name = "ecom_admin_tj"
-version = "0.0.10"
+version = "0.1.0"
 authors = [
   { name="Pitsanu Namnil", email="lockdoor@gmail.com" },
 ]
@@ -38,7 +38,8 @@ requires-python = ">=3.8"
 dependencies = [
   "numpy",
   "pandas",
-  "openpyxl"
+  "openpyxl",
+  "tqdm"
 ]
 classifiers = [
   "Programming Language :: Python :: 3",
