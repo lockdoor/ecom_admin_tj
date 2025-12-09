@@ -10,9 +10,9 @@ class Shopee(Base):
     invoice_group_dict: dict[str, pd.DataFrame] = {}
     deduct_stock_df: pd.DataFrame | None = None
     
-    def __init__(self, input_file: str, output_file: str = None, shipping_date = None):
+    def __init__(self, input_file: str, output_file: str = None, shipping_date = None, mapping_file: str = None):
         """Initialize Shopee processor with specific settings"""
-        super().__init__(input_file, output_file, shipping_date)
+        super().__init__(input_file, output_file, shipping_date, mapping_file=mapping_file)
         
         # Set Shopee-specific attributes
         self.SCRIPT_DIR = Path(__file__).parent

@@ -9,7 +9,7 @@ class Tiktok(Base):
     MAPPING_FILE = SCRIPT_DIR / 'tiktok_item_mapping.xlsx'
     ORIGINAL_SHEET_NAME = 'OrderSKUList'
     
-    def __init__(self, input_file: str, output_file: str = None, shipping_date = None):
+    def __init__(self, input_file: str, output_file: str = None, shipping_date = None, mapping_file: str = None):
         """Initialize Tiktok processor with specific settings
                 
         Args:
@@ -20,7 +20,7 @@ class Tiktok(Base):
         # Pass None for shipping_date since Lazada doesn't use it
         if shipping_date is not None:
             print('Warning: shipping_date parameter is not used in Lazada processing.')
-        super().__init__(input_file, output_file, shipping_date = None)
+        super().__init__(input_file, output_file, shipping_date = None, mapping_file=mapping_file)
         
         # Set Tiktok-specific attributes
         self.SCRIPT_DIR = Path(__file__).parent
