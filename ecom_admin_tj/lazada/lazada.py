@@ -6,7 +6,7 @@ from pathlib import Path
 
 class Lazada(Base):
     
-    def __init__(self, input_file: str, output_file: str = None, shipping_date = None):
+    def __init__(self, input_file: str, output_file: str = None, shipping_date = None, mapping_file: str = None):
         """Initialize Lazada processor with specific settings
                 
         Args:
@@ -17,11 +17,12 @@ class Lazada(Base):
         # Pass None for shipping_date since Lazada doesn't use it
         if shipping_date is not None:
             print('Warning: shipping_date parameter is not used in Lazada processing.')
-        super().__init__(input_file, output_file, shipping_date = None)
+        super().__init__(input_file, output_file, shipping_date = None, mapping_file = mapping_file)
         
         # Set Lazada-specific attributes
         self.SCRIPT_DIR = Path(__file__).parent
-        self.MAPPING_FILE = self.SCRIPT_DIR / "lazada_item_mapping.xlsx"
+        if self.MAPPING_FILE is None:
+            self.MAPPING_FILE = self.SCRIPT_DIR / "lazada_item_mapping.xlsx"
         self.ORIGINAL_SHEET_NAME = "sheet1"
         self.merge_left = 'lazadaSku'
         self.merge_right = 'platform_item_id'

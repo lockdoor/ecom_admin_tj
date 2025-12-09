@@ -12,7 +12,7 @@ class Base(ABC):
     MAPPING_FILE: Path | None = None
     ORIGINAL_SHEET_NAME: str | None = None
     
-    def __init__(self, input_file: str, output_file: str = None, shipping_date: datetime = None):
+    def __init__(self, input_file: str, output_file: str = None, shipping_date: datetime = None, mapping_file: str = None):
         """
         Initialize with input file path
         
@@ -34,6 +34,7 @@ class Base(ABC):
         self.order_sn_unique: int = 0
         self.merge_left : str | None = None
         self.merge_right : str | None = None
+        self.MAPPING_FILE = mapping_file
     
     def _generate_output_filename(self) -> str:
         """Generate output filename from input filename"""
@@ -229,6 +230,13 @@ class Base(ABC):
             dest='shipping_date',
             help='Processing date in YYYY-MM-DD format (default: None)'
         )
+
+        parser.add_argument(
+            '-m', '--mapping_file',
+            type=str,
+            dest='mapping_file',
+            help='Path to custom mapping Excel file (default: built-in mapping file)'
+        )
         
         return parser
     
@@ -253,9 +261,13 @@ class Base(ABC):
                 shipping_date = datetime.strptime(parsed_args.shipping_date, '%Y-%m-%d')
             except ValueError:
                 parser.error(f'Invalid date format: {parsed_args.shipping_date}. Use YYYY-MM-DD')
+
+        if parsed_args.mapping_file:
+            print(f'Using custom mapping file: {parsed_args.mapping_file}')
         
         return cls(
             input_file=parsed_args.input_file,
             output_file=parsed_args.output_file,
-            shipping_date=shipping_date
+            shipping_date=shipping_date,
+            mapping_file=parsed_args.mapping_file
         )
