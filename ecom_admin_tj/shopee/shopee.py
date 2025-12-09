@@ -16,7 +16,8 @@ class Shopee(Base):
         
         # Set Shopee-specific attributes
         self.SCRIPT_DIR = Path(__file__).parent
-        self.MAPPING_FILE = self.SCRIPT_DIR / "shopee_item_mapping.xlsx"
+        if self.MAPPING_FILE is None:
+            self.MAPPING_FILE = self.SCRIPT_DIR / "shopee_item_mapping.xlsx"
         self.ORIGINAL_SHEET_NAME = "orders"
         self.merge_left = 'เลขอ้างอิง Parent SKU'
         self.merge_right = 'platform_sku'

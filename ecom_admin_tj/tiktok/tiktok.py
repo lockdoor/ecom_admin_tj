@@ -24,7 +24,8 @@ class Tiktok(Base):
         
         # Set Tiktok-specific attributes
         self.SCRIPT_DIR = Path(__file__).parent
-        self.MAPPING_FILE = self.SCRIPT_DIR / "tiktok_item_mapping.xlsx"
+        if self.MAPPING_FILE is None:
+            self.MAPPING_FILE = self.SCRIPT_DIR / "tiktok_item_mapping.xlsx"
         self.ORIGINAL_SHEET_NAME = "OrderSKUList"
         self.merge_left = 'SKU ID'
         self.merge_right = 'platform_item_id'
