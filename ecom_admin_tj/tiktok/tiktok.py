@@ -60,7 +60,7 @@ class Tiktok(Base):
             self.input_file, 
             sheet_name=self.ORIGINAL_SHEET_NAME, 
             dtype=type_dict, header=0, 
-            skiprows=[1])
+            skiprows=None if self.input_file.endswith('_output.xlsx') else [1])
         
         if "Cancelation/Return Type" not in self.original_df.columns:
             # ถ้าอ่านด้วย pandas ไม่เจอคอลัมน์ "Cancelation/Return Type"

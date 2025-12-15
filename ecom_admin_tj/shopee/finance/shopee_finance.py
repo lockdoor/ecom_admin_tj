@@ -9,6 +9,21 @@ from ...common.excel_format_mixin import ExcelFormatMixin, Worksheet
 class ShopeeFinanceMixin(ExcelFormatMixin):
     """Finance related methods for Shopee admin"""
 
+    report_type_dict = {
+            'วันที่': str, 
+            'ประเภทการทำธุรกรรม': str, 
+            'คำอธิบาย': str, 
+            'รหัสคำสั่งซื้อ': str,
+            'รูปแบบธุรกรรม': str, 
+            'จำนวนเงิน': np.float64, 
+            'สถานะ': str, 
+            'ยอดเงินหลังทำธุรกรรมเสร็จสิ้น': np.float64,
+            'admin_record_file': 'string',
+            'ราคาขายสุทธิ': np.float64,
+            'ค่าจัดส่งที่ชำระโดยผู้ซื้อ': np.float64,
+            'รวมชำระ': np.float64
+        }
+
     @classmethod
     def make_finance_report_df(cls, original_report_file: str) -> pd.DataFrame:
         """Create a cleaned finance report from the original report file"""
@@ -20,38 +35,39 @@ class ShopeeFinanceMixin(ExcelFormatMixin):
             module='openpyxl'
         )
 
-        report_type_dict = {
-            'วันที่': str, 
-            'ประเภทการทำธุรกรรม': str, 
-            'คำอธิบาย': str, 
-            'รหัสคำสั่งซื้อ': str,
-            'รูปแบบธุรกรรม': str, 
-            'จำนวนเงิน': np.float64, 
-            'สถานะ': str, 
-            'ยอดเงินหลังทำธุรกรรมเสร็จสิ้น': np.float64
-        }
         report_df = pd.read_excel(
             original_report_file, 
             sheet_name='Transaction Report', 
             header=17, 
-            dtype=report_type_dict)
+            dtype=cls().report_type_dict)
 
-        # Add column ['admin_record_file': str, 'ราคาขายสุทธิ': np.float64, 'ค่าจัดส่งที่ชำระโดยผู้ซื้อ': np.float64, 'ค่าจัดส่งที่ Shopee ออกให้โดยประมาณ': np.float64]
+        columns = ['วันที่', 'ประเภทการทำธุรกรรม', 'รหัสคำสั่งซื้อ', 'จำนวนเงิน', 'สถานะ','admin_record_file', 'ราคาขายสุทธิ', 'ค่าจัดส่งที่ชำระโดยผู้ซื้อ', 'รวมชำระ']
         # Initialize with NaN values
         report_df['admin_record_file'] = pd.NA
         report_df['ราคาขายสุทธิ'] = np.nan
         report_df['ค่าจัดส่งที่ชำระโดยผู้ซื้อ'] = np.nan
-        report_df['ค่าจัดส่งที่ Shopee ออกให้โดยประมาณ'] = np.nan
+        report_df['รวมชำระ'] = np.nan
         # Set up dtypes
         report_df = report_df.astype({
             'admin_record_file': 'string',
             'ราคาขายสุทธิ': 'float64',
             'ค่าจัดส่งที่ชำระโดยผู้ซื้อ': 'float64',
-            'ค่าจัดส่งที่ Shopee ออกให้โดยประมาณ': 'float64'
+            'รวมชำระ': 'float64'
         })
 
-        return report_df
-
+        return report_df[columns]
+    
+    def _report_sheet_format_width_column(self, sheet: Worksheet):
+        sheet.column_dimensions['A'].width = 20  # วันที่
+        sheet.column_dimensions['B'].width = 20  # ประเภทการทำธุรกรรม
+        sheet.column_dimensions['C'].width = 20  # รหัสคำสั่งซื้อ
+        sheet.column_dimensions['D'].width = 12  # จำนวนเงิน
+        sheet.column_dimensions['E'].width = 15  # สถานะ
+        sheet.column_dimensions['F'].width = 30  # admin_record_file
+        sheet.column_dimensions['G'].width = 12  # ราคาขายสุทธิ
+        sheet.column_dimensions['H'].width = 12  # ค่าจัดส่งที่ชำระโดยผู้ซื้อ
+        sheet.column_dimensions['I'].width = 12  # รวมชำระ
+    
     @classmethod
     def make_finance_report(cls, original_report_file: str, output_file: str = None, auto_rename: bool = True) -> str:
         """Create a cleaned finance report from the original report file"""
@@ -76,15 +92,7 @@ class ShopeeFinanceMixin(ExcelFormatMixin):
         with pd.ExcelWriter(output_file, engine='openpyxl') as writer:
             report_df.to_excel(excel_writer=writer, sheet_name='Transaction Report', index=False)
             report_sheet = writer.sheets['Transaction Report']
-            report_sheet.column_dimensions['A'].width = 20  # วันที่
-            report_sheet.column_dimensions['B'].width = 30  # ประเภทการทำธุรกรรม
-            report_sheet.column_dimensions['C'].width = 50  # คำอธิบาย
-            report_sheet.column_dimensions['D'].width = 20  # รหัสคำสั่งซื้อ
-            report_sheet.column_dimensions['E'].width = 25  # รูปแบบธุรกรรม
-            report_sheet.column_dimensions['F'].width = 15  # จำนวนเงิน
-            report_sheet.column_dimensions['G'].width = 15  # สถานะ
-            report_sheet.column_dimensions['H'].width = 25  # ยอดเงินหลังทำธุรกรรมเสร็จสิ้น
-            report_sheet.column_dimensions['I'].width = 30  # admin_record_file
+            cls()._report_sheet_format_width_column(sheet=report_sheet)
             cls()._formating_header(sheet=report_sheet)
             print(f"✅ Saved to: {output_file}")
 
@@ -217,23 +225,8 @@ class ShopeeFinanceMixin(ExcelFormatMixin):
             pd.DataFrame: Merged DataFrame after reconciliation
         """
 
-        report_type_dict = {
-            'วันที่': str, 
-            'ประเภทการทำธุรกรรม': str, 
-            'คำอธิบาย': str, 
-            'รหัสคำสั่งซื้อ': str,
-            'รูปแบบธุรกรรม': str, 
-            'จำนวนเงิน': np.float64, 
-            'สถานะ': str, 
-            'ยอดเงินหลังทำธุรกรรมเสร็จสิ้น': np.float64,
-            'admin_record_file': 'string',
-            'ราคาขายสุทธิ': np.float64,
-            'ค่าจัดส่งที่ชำระโดยผู้ซื้อ': np.float64,
-            'ค่าจัดส่งที่ Shopee ออกให้โดยประมาณ': np.float64
-        }
-
         try:
-            reported_df = pd.read_excel(reported_file, dtype=report_type_dict, sheet_name='Transaction Report')
+            reported_df = pd.read_excel(reported_file, dtype=cls().report_type_dict, sheet_name='Transaction Report')
         except ValueError as e:
             raise ValueError(f"❌ Error reading reported file '{reported_file}': {e}")
 
@@ -330,11 +323,17 @@ class ShopeeFinanceMixin(ExcelFormatMixin):
         
         # ลบ column _merge และ หมายเลขคำสั่งซื้อ (duplicate)
         try:
-            merged_df = merged_df.drop(columns=['_merge', 'หมายเลขคำสั่งซื้อ', 'reported_file'])
+            merged_df = merged_df.drop(columns=['_merge', 'หมายเลขคำสั่งซื้อ', 'reported_file', 'ค่าจัดส่งที่ Shopee ออกให้โดยประมาณ'])
         except KeyError:
-            merged_df = merged_df.drop(columns=['_merge', 'หมายเลขคำสั่งซื้อ'])
+            merged_df = merged_df.drop(columns=['_merge', 'หมายเลขคำสั่งซื้อ', 'ค่าจัดส่งที่ Shopee ออกให้โดยประมาณ'])
         cls.draw_progress_bar(merged_df)
-        
+
+        # รวมชำระ
+        merged_df['รวมชำระ'] = merged_df['ราคาขายสุทธิ'] + merged_df['ค่าจัดส่งที่ชำระโดยผู้ซื้อ']
+
+        # เรียงตามวันที่ admin_record_file
+        merged_df.sort_values('admin_record_file', inplace=True)
+         
         # แสดงผลสรุป
         print(f"⚠️  Remaining unmatched: {merged_df['admin_record_file'].isna().sum()}")
 
@@ -354,18 +353,7 @@ class ShopeeFinanceMixin(ExcelFormatMixin):
             with pd.ExcelWriter(reported_file, engine='openpyxl') as writer:
                 merged_df.to_excel(excel_writer=writer, sheet_name='Transaction Report', index=False)
                 report_sheet = writer.sheets['Transaction Report']
-                report_sheet.column_dimensions['A'].width = 20  # วันที่
-                report_sheet.column_dimensions['B'].width = 30  # ประเภทการทำธุรกรรม
-                report_sheet.column_dimensions['C'].width = 50  # คำอธิบาย
-                report_sheet.column_dimensions['D'].width = 20  # รหัสคำสั่งซื้อ
-                report_sheet.column_dimensions['E'].width = 25  # รูปแบบธุรกรรม
-                report_sheet.column_dimensions['F'].width = 15  # จำนวนเงิน
-                report_sheet.column_dimensions['G'].width = 15  # สถานะ
-                report_sheet.column_dimensions['H'].width = 25  # ยอดเงินหลังทำธุรกรรมเสร็จสิ้น
-                report_sheet.column_dimensions['I'].width = 30  # admin_record_file
-                report_sheet.column_dimensions['J'].width = 15  # ราคาขายสุทธิ
-                report_sheet.column_dimensions['K'].width = 15  # ค่าจัดส่งที่ชำระโดยผู้ซื้อ
-                report_sheet.column_dimensions['L'].width = 15  # ค่าจัดส่งที่ Shopee ออกให้โดยประมาณ
+                cls()._report_sheet_format_width_column(sheet=report_sheet)
                 cls()._formating_header(sheet=report_sheet)
                 print(f"✅ Updated reported file saved to: {reported_file}")
         
