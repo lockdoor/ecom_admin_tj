@@ -78,6 +78,15 @@ class Base(ABC, ExcelFormatMixin):
             left_on=self.merge_left, 
             right_on=self.merge_right, 
             how='left')
+        
+        # check NaN after merge
+        missing_mapping = self.merged_df[self.merged_df['multiplier'].isna()]
+        if not missing_mapping.empty:
+            print(f"Warning: No mapping found for")
+            for index, row in missing_mapping.iterrows():
+                print(row)
+            raise ValueError("Mapping incomplete: some items in main_df have no corresponding entry in mapping_df.")
+
         return self.merged_df
     
     @abstractmethod
