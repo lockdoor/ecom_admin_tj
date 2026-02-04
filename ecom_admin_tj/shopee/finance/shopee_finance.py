@@ -1,6 +1,7 @@
 import warnings
 import pandas as pd
 import numpy as np
+import re
 from pathlib import Path
 from datetime import datetime
 from tqdm import tqdm
@@ -76,7 +77,15 @@ class ShopeeFinanceMixin(ExcelFormatMixin):
             original_report_file)
 
         if output_file is None:
-            output_file = 'cleaned_finance_report.xlsx'
+            # Extract date range from input filename (e.g., 20260112_20260118)
+            input_filename = Path(original_report_file).stem
+            date_match = re.search(r'(\d{8}_\d{8})', input_filename)
+            
+            if date_match:
+                date_range = date_match.group(1)
+                output_file = f'shopee_cleaned_finance_report_{date_range}.xlsx'
+            else:
+                output_file = 'shopee_cleaned_finance_report.xlsx'
 
         output_path = Path(output_file)
 
