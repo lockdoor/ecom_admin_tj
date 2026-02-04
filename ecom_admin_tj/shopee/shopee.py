@@ -50,7 +50,7 @@ class Shopee(Base):
         """Load main data from Shopee input file"""
         
         # Required columns
-        required_cols = ['หมายเลขคำสั่งซื้อ', 'เลขอ้างอิง Parent SKU',  'ชื่อสินค้า', 
+        required_cols = ['หมายเลขคำสั่งซื้อ', 'เลขอ้างอิง Parent SKU',  'ชื่อสินค้า', 'เลขอ้างอิง SKU (SKU Reference No.)',
                         'ราคาตั้งต้น', 'ราคาขาย', 'จำนวน', 'ราคาขายสุทธิ', 'ค่าจัดส่งที่ชำระโดยผู้ซื้อ', 
                         'ค่าจัดส่งที่ Shopee ออกให้โดยประมาณ', 'ผู้ซื้อร้องขอใบกำกับภาษี', 'วันที่คาดว่าจะทำการจัดส่งสินค้า']
         
@@ -67,6 +67,13 @@ class Shopee(Base):
             has_cancel_reason = False
 
         self.main_df = self.main_df.dropna(subset=['หมายเลขคำสั่งซื้อ']).copy()
+        
+        # Merge 'เลขอ้างอิง Parent SKU' with 'เลขอ้างอิง SKU (SKU Reference No.)'
+        # Use Parent SKU as primary, fallback to SKU Reference No. if Parent SKU is empty
+        self.main_df['เลขอ้างอิง Parent SKU'] = self.main_df['เลขอ้างอิง Parent SKU'].fillna(self.main_df['เลขอ้างอิง SKU (SKU Reference No.)'])
+        # Drop the SKU Reference No. column
+        self.main_df.drop(columns=['เลขอ้างอิง SKU (SKU Reference No.)'], inplace=True)
+        
         self.main_df['ราคาขายสุทธิ'] = self.main_df['ราคาขายสุทธิ'].astype(np.float64)
         self.main_df['วันที่คาดว่าจะทำการจัดส่งสินค้า'] = pd.to_datetime(self.main_df['วันที่คาดว่าจะทำการจัดส่งสินค้า'], errors='coerce')
 
