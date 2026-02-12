@@ -68,7 +68,7 @@ class Lazada(Base):
             dtype=dtype_dict, 
             usecols=columns)
         self.main_df.fillna({'sellerDiscountTotal': 0}, inplace=True)
-        self.main_df['lazadaSku'] = self.main_df['lazadaSku'].map(lambda x: x.split('_')[0])
+        # self.main_df['lazadaSku'] = self.main_df['lazadaSku'].map(lambda x: x.split('_')[0])
         
         # read canceled sheets    
         self.load_canceled_orders()
