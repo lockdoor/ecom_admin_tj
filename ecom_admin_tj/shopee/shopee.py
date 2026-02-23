@@ -109,10 +109,26 @@ class Shopee(Base):
             'ค่าจัดส่งที่ชำระโดยผู้ซื้อ': 'first',
             'ค่าจัดส่งที่ Shopee ออกให้โดยประมาณ': 'first',
         }).reset_index()
+
+        self.finance_df['รวม'] = self.finance_df['ราคาขายสุทธิ'] + self.finance_df['ค่าจัดส่งที่ชำระโดยผู้ซื้อ']
+        # Reorder columns
+        self.finance_df = self.finance_df[['หมายเลขคำสั่งซื้อ', 'รวม', 'ราคาขายสุทธิ', 'ค่าจัดส่งที่ชำระโดยผู้ซื้อ', 'ค่าจัดส่งที่ Shopee ออกให้โดยประมาณ']]
         
+        # Load old finance from output file if exists to preserve reported_file history
+        try:
+            old_finance_df = pd.read_excel(self.output_file, sheet_name="Finance Summary", skipfooter=1)
+            if 'reported_file' in old_finance_df.columns:
+                # Preserve reported_file from previous runs
+                self.finance_df['reported_file'] = self.finance_df['หมายเลขคำสั่งซื้อ'].map(
+                    old_finance_df.set_index('หมายเลขคำสั่งซื้อ')['reported_file'])
+            print(f"Loaded old finance data from {self.output_file} to preserve reported_file history.")
+        except Exception:
+            pass
+
         # Add footer row with totals
         total_row = {
             'หมายเลขคำสั่งซื้อ': 'TOTAL',
+            'รวม': self.finance_df['รวม'].sum(),
             'ราคาขายสุทธิ': self.finance_df['ราคาขายสุทธิ'].sum(),
             'ค่าจัดส่งที่ชำระโดยผู้ซื้อ': self.finance_df['ค่าจัดส่งที่ชำระโดยผู้ซื้อ'].sum(),
             'ค่าจัดส่งที่ Shopee ออกให้โดยประมาณ': self.finance_df['ค่าจัดส่งที่ Shopee ออกให้โดยประมาณ'].sum(),
@@ -283,6 +299,7 @@ class Shopee(Base):
                         'stock_item_name': row['stock_item_name'],
                         'quantity': row['จำนวนรวม']
                     }
+        return self.deduct_stock_df
        
     def process(self) -> None:
         '''Main function to process Shopee orders and generate invoices

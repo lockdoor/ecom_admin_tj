@@ -180,21 +180,23 @@ class ShopeeFinanceMixin(ExcelFormatMixin):
                 # Add footer row with totals
                 total_row = {
                     'หมายเลขคำสั่งซื้อ': 'TOTAL',
+                    'รวม': merged_df['รวม'].sum(),
                     'ราคาขายสุทธิ': merged_df['ราคาขายสุทธิ'].sum(),
                     'ค่าจัดส่งที่ชำระโดยผู้ซื้อ': merged_df['ค่าจัดส่งที่ชำระโดยผู้ซื้อ'].sum(),
                     'ค่าจัดส่งที่ Shopee ออกให้โดยประมาณ': merged_df['ค่าจัดส่งที่ Shopee ออกให้โดยประมาณ'].sum(),
                 }
                 merged_df.loc[len(merged_df)] = total_row
                 merged_df.to_excel(writer, sheet_name='Finance Summary', index=False)
-                # self.finance_df.to_excel(writer, sheet_name='Finance Summary', index=False)
                 finance_sheet: Worksheet = writer.sheets['Finance Summary']
                 finance_sheet.column_dimensions['A'].width = 25  # หมายเลขคำสั่งซื้อ
-                finance_sheet.column_dimensions['B'].width = 15  # ราคาขายสุทธิ
-                finance_sheet.column_dimensions['C'].width = 15  # ค่าจัดส่งที่ชำระโดยผู้ซื้อ
-                finance_sheet.column_dimensions['D'].width = 20  # ค่าจัดส่งที่ Shopee ออกให้โดยประมาณ
+                finance_sheet.column_dimensions['B'].width = 15  # รวม
+                finance_sheet.column_dimensions['C'].width = 15  # ราคาขายสุทธิ
+                finance_sheet.column_dimensions['D'].width = 15  # ค่าจัดส่งที่ชำระโดยผู้ซื้อ
+                finance_sheet.column_dimensions['E'].width = 20  # ค่าจัดส่งที่ Shopee ออกให้โดยประมาณ
                 cls()._formating_header(finance_sheet)
                 cls()._formatting_footer(sheet=finance_sheet, footer_row=len(merged_df)+1)
                 print(f"✅ Updated admin file saved to: {admin_file}")
+
         else:
             print(f"🔍 Dry-run mode: Admin file not updated")
         
@@ -255,6 +257,12 @@ class ShopeeFinanceMixin(ExcelFormatMixin):
         }
         try:
             admin_df = pd.read_excel(admin_file, dtype=admin_type_dict, sheet_name='Finance Summary', skipfooter=1)
+            if 'รวม' not in admin_df.columns:
+                print("Column 'รวม' not found in admin file. Calculating 'รวม' as sum of 'ราคาขายสุทธิ' and 'ค่าจัดส่งที่ชำระโดยผู้ซื้อ'.")
+                admin_df['รวม'] = admin_df['ราคาขายสุทธิ'] + admin_df['ค่าจัดส่งที่ชำระโดยผู้ซื้อ']
+                # Reorder columns - ใช้ชื่อ column แทน index เพื่อความปลอดภัย
+                admin_df = admin_df[['หมายเลขคำสั่งซื้อ', 'รวม', 'ราคาขายสุทธิ', 'ค่าจัดส่งที่ชำระโดยผู้ซื้อ', 'ค่าจัดส่งที่ Shopee ออกให้โดยประมาณ']]
+
         except ValueError as e:
             raise ValueError(f"❌ Error reading admin file '{admin_file}': {e}")
         print("Number of orders in admin file:", len(admin_df))
@@ -273,7 +281,7 @@ class ShopeeFinanceMixin(ExcelFormatMixin):
                     # Remove old matched data for these order IDs
                     reported_df.loc[reported_df['รหัสคำสั่งซื้อ'].isin(duplicate_ids), 'admin_record_file'] = pd.NA
                     # Also clear data columns for re-matching
-                    data_columns = ['ราคาขายสุทธิ', 'ค่าจัดส่งที่ชำระโดยผู้ซื้อ', 'ค่าจัดส่งที่ Shopee ออกให้โดยประมาณ']
+                    data_columns = ['รวม', 'ราคาขายสุทธิ', 'ค่าจัดส่งที่ชำระโดยผู้ซื้อ', 'ค่าจัดส่งที่ Shopee ออกให้โดยประมาณ']
                     for col in data_columns:
                         if col in reported_df.columns:
                             reported_df.loc[reported_df['รหัสคำสั่งซื้อ'].isin(duplicate_ids), col] = pd.NA
@@ -284,7 +292,7 @@ class ShopeeFinanceMixin(ExcelFormatMixin):
         reported_cols = set(reported_df.columns)
         
         # Columns that should always be synced from admin_df (data columns)
-        data_columns = ['ราคาขายสุทธิ', 'ค่าจัดส่งที่ชำระโดยผู้ซื้อ', 'ค่าจัดส่งที่ Shopee ออกให้โดยประมาณ']
+        data_columns = ['รวม', 'ราคาขายสุทธิ', 'ค่าจัดส่งที่ชำระโดยผู้ซื้อ', 'ค่าจัดส่งที่ Shopee ออกให้โดยประมาณ']
         
         # Get new columns (not in reported_df) plus data columns (to update) plus key column
         admin_cols_to_merge = ['หมายเลขคำสั่งซื้อ'] + [

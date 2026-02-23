@@ -118,7 +118,7 @@ class Tiktok(Base):
         self.merged_df['จำนวนรวม'] = self.merged_df['Quantity'] * self.merged_df['multiplier']
         return self.merged_df
     
-    def calculate_invoice(self):
+    def calculate_invoice(self) -> pd.DataFrame:
         
         if self.merged_df is None:
             raise ValueError("Merged dataframe is not available. Please run merge_mapping() first.")
@@ -147,10 +147,14 @@ class Tiktok(Base):
             'SKU Seller Discount': 'sum',
             'SKU Subtotal After Discount': 'sum',   
         }).reset_index()
+
+        self.finance_df['รวม'] = self.finance_df['SKU Subtotal Before Discount'] - self.finance_df['SKU Seller Discount']
+        self.finance_df = self.finance_df.iloc[:, [0, 4, 1, 2, 3]]
         
         # Add footer row with totals
         total_row = {
             'Order ID': 'TOTAL',
+            'รวม': self.finance_df['รวม'].sum(),
             'SKU Subtotal Before Discount': self.finance_df['SKU Subtotal Before Discount'].sum(),
             'SKU Seller Discount': self.finance_df['SKU Seller Discount'].sum(),
             'SKU Subtotal After Discount': self.finance_df['SKU Subtotal After Discount'].sum(),
@@ -190,9 +194,10 @@ class Tiktok(Base):
             self.finance_df.to_excel(writer, sheet_name='Finance Summary', index=False)
             finance_sheet: Worksheet = writer.sheets['Finance Summary']
             finance_sheet.column_dimensions['A'].width = 25  # Order ID
-            finance_sheet.column_dimensions['B'].width = 18  # SKU Subtotal Before Discount
-            finance_sheet.column_dimensions['C'].width = 18  # SKU Seller Discount
-            finance_sheet.column_dimensions['D'].width = 18  # SKU Subtotal After Discount
+            finance_sheet.column_dimensions['B'].width = 12  # รวม
+            finance_sheet.column_dimensions['C'].width = 18  # SKU Subtotal Before Discount
+            finance_sheet.column_dimensions['D'].width = 18  # SKU Seller Discount
+            finance_sheet.column_dimensions['E'].width = 18  # SKU Subtotal After Discount
             self._formating_header(finance_sheet)
-            self._formatting_body(sheet=finance_sheet, start_row=2, end_row=len(self.finance_df), start_col=1, end_col=4)
+            self._formatting_body(sheet=finance_sheet, start_row=2, end_row=len(self.finance_df), start_col=1, end_col=5)
             self._formatting_footer(sheet=finance_sheet, footer_row=len(self.finance_df)+1)
