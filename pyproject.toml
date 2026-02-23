@@ -28,7 +28,7 @@ exclude = [
 
 [project]
 name = "ecom_admin_tj"
-version = "1.0.0"
+version = "1.0.1"
 authors = [
   { name="Pitsanu Namnil", email="lockdoor@gmail.com" },
 ]

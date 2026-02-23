@@ -247,16 +247,18 @@ class Shopee(Base):
             self.finance_df.to_excel(writer, sheet_name='Finance Summary', index=False)
             finance_sheet: Worksheet = writer.sheets['Finance Summary']
             finance_sheet.column_dimensions['A'].width = 25  # หมายเลขคำสั่งซื้อ
+            finance_sheet.column_dimensions['E'].width = 15  # รวม
             finance_sheet.column_dimensions['B'].width = 15  # ราคาขายสุทธิ
             finance_sheet.column_dimensions['C'].width = 15  # ค่าจัดส่งที่ชำระโดยผู้ซื้อ
             finance_sheet.column_dimensions['D'].width = 20  # ค่าจัดส่งที่ Shopee ออกให้โดยประมาณ
+            finance_sheet.column_dimensions['F'].width = 40  # reported_file
             self._formating_header(finance_sheet)
             self._formatting_body(
                 sheet=finance_sheet, 
                 start_row=2, 
                 end_row=len(self.finance_df), 
                 start_col=1, 
-                end_col=4)
+                end_col=6)
             self._formatting_footer(sheet=finance_sheet, footer_row=len(self.finance_df)+1)
     
     def calculate_group_invoice(self) -> None:
