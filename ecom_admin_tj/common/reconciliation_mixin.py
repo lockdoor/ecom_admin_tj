@@ -252,7 +252,8 @@ class ReconciliationMixin(FinanceBaseMixin):
         admin_file: str,
         dry_run: bool = False,
         allow_replace: bool = False,
-        column_mapping: Dict[str, str] = None
+        column_mapping: Dict[str, str] = None,
+        sheet_name: str = 'Transaction Report'
     ) -> pd.DataFrame:
         """
         Compare reported finance file with calculated finance file
@@ -263,6 +264,7 @@ class ReconciliationMixin(FinanceBaseMixin):
             dry_run: Whether to update the reported file in place
             allow_replace: Allow replacing existing matched records
             column_mapping: Dict mapping standard names to actual column names
+            sheet_name: Name of the sheet in reported file (default: 'Transaction Report')
             
         Returns:
             Merged DataFrame after reconciliation
@@ -284,7 +286,7 @@ class ReconciliationMixin(FinanceBaseMixin):
             reported_df = pd.read_excel(
                 reported_file,
                 dtype=cls().report_type_dict,
-                sheet_name='Transaction Report'
+                sheet_name=sheet_name
             )
         except ValueError as e:
             raise ValueError(f"❌ Error reading reported file '{reported_file}': {e}")
@@ -437,8 +439,8 @@ class ReconciliationMixin(FinanceBaseMixin):
         if not dry_run:
             # Save updated reported file
             with pd.ExcelWriter(reported_file, engine='openpyxl') as writer:
-                merged_df.to_excel(excel_writer=writer, sheet_name='Transaction Report', index=False)
-                report_sheet = writer.sheets['Transaction Report']
+                merged_df.to_excel(excel_writer=writer, sheet_name=sheet_name, index=False)
+                report_sheet = writer.sheets[sheet_name]
                 cls()._report_sheet_format_width_column(sheet=report_sheet)
                 cls()._formating_header(sheet=report_sheet)
                 print(f"✅ Updated reported file saved to: {reported_file}")

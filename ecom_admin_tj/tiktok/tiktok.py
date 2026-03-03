@@ -149,7 +149,11 @@ class Tiktok(Base):
         }).reset_index()
 
         self.finance_df['รวม'] = self.finance_df['SKU Subtotal Before Discount'] - self.finance_df['SKU Seller Discount']
-        self.finance_df = self.finance_df.iloc[:, [0, 4, 1, 2, 3]]
+        order_column = [
+            'Order ID', 'รวม', 'SKU Subtotal Before Discount', 'SKU Seller Discount', 'SKU Subtotal After Discount'
+        ]
+        self.finance_df = self.finance_df[order_column]
+        # self.finance_df = self.finance_df.iloc[:, [0, 4, 1, 2, 3]]
         
         # Add footer row with totals
         total_row = {
