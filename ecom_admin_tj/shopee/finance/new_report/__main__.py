@@ -1,37 +1,32 @@
-from ..shopee_finance import ShopeeFinanceMixin
-import argparse
+"""
+Shopee New Report (Clean Report) Entry Point
 
-def create_argument_parser() -> argparse.ArgumentParser:
+Creates a cleaned finance report from original Shopee finance report.
+This extracts and formats the essential transaction data into a clean
+Excel file with proper column widths and formatting.
+
+Usage:
+    # Basic usage - auto-generate output filename
+    python -m ecom_admin_tj.shopee.finance.new_report input_report.xlsx
     
-    parser = argparse.ArgumentParser(
-        description='Create new Shopee finance clean report',
-        formatter_class=argparse.RawDescriptionHelpFormatter
-    )
-
-    parser.add_argument(
-        'original_file',
-        type=str,
-        help='Path to the original Shopee finance report file',
-    )
-
-    parser.add_argument(
-        '-o', '--output',
-        type=str,
-        help='Path to save the new cleaned finance report',
-        dest='output_file',
-        required=False
-    )
-
-    return parser
+    # Specify custom output filename
+    python -m ecom_admin_tj.shopee.finance.new_report input_report.xlsx -o cleaned.xlsx
+    
+    # Overwrite existing file (no auto-rename)
+    python -m ecom_admin_tj.shopee.finance.new_report input_report.xlsx --no-auto-rename
+"""
+import sys
+from ....common.cli.report_cleaner_cli import ReportCleanerCLI
+from ..shopee_finance import ShopeeFinanceMixin
 
 def main():
-    parser = create_argument_parser()
-    parsed_args = parser.parse_args()
-    
-    ShopeeFinanceMixin.make_finance_report(
-        original_report_file=parsed_args.original_file,
-        output_file=parsed_args.output_file
+    """Main entry point for Shopee report cleaner"""
+    cli = ReportCleanerCLI(
+        platform_name='Shopee',
+        finance_mixin_class=ShopeeFinanceMixin
     )
+    exit_code = cli.run()
+    sys.exit(exit_code)
 
 if __name__ == "__main__":
     main()

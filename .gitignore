@@ -11,3 +11,8 @@ lab.ipynb
 # Ignore json files
 stock_items.csv
 tiktok_product_local_products_list.json
+
+.coverage
+htmlcov/
+.pytest_cache/
+admin_file/
