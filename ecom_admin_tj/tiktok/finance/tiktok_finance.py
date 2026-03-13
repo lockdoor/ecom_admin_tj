@@ -215,6 +215,7 @@ class TikTokFinanceMixin(ReconciliationMixin):
                 column_mapping['net_price']: np.float64,
                 column_mapping['buyer_shipping']: np.float64,
                 column_mapping['platform_shipping']: np.float64,
+                'reported_file': str,  # For tracking which report matched this admin record
             }
             
             admin_df = pd.read_excel(

@@ -7,6 +7,7 @@ venv/
 lab.ipynb
 *.ipynb
 *.pdf
+*.log
 
 # Ignore json files
 stock_items.csv
