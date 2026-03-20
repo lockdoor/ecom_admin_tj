@@ -59,12 +59,17 @@ class Shopee(Base):
             self.original_df = pd.read_excel(
                 self.input_file, sheet_name=self.ORIGINAL_SHEET_NAME)
         
+        # 2026-03-20 because column 'ราคาขายสุทธิ' change to 'ยอดชำระเงิน'
+        if 'ยอดชำระเงิน' in self.original_df.columns:
+            self.original_df.rename(columns={'ยอดชำระเงิน': 'ราคาขายสุทธิ'}, inplace=True)
+
         if 'เหตุผลในการยกเลิกคำสั่งซื้อ' in self.original_df.columns:
             self.main_df = self.original_df[required_cols + ['เหตุผลในการยกเลิกคำสั่งซื้อ']].copy()
             has_cancel_reason = True
         else:
             self.main_df = self.original_df[required_cols].copy()
             has_cancel_reason = False
+
 
         self.main_df = self.main_df.dropna(subset=['หมายเลขคำสั่งซื้อ']).copy()
         

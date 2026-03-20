@@ -7,6 +7,7 @@ that can be used by any platform.
 import argparse
 import re
 import sys
+import time
 from pathlib import Path
 from typing import Type, Optional
 
@@ -259,6 +260,9 @@ Examples:
                     # In non-dry-run mode, stop on error
                     return 1
                 # In dry-run mode, continue with other files
+            finally:
+                # 2026-03-18 Add a small delay between processing files to avoid overwhelming resources
+                time.sleep(1)
         
         return 0
 
