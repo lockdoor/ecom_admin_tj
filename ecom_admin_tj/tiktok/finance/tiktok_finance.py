@@ -55,11 +55,25 @@ class TikTokFinanceMixin(ReconciliationMixin):
         
         # Select and rename key columns
         # Note: 'Order/adjustment ID  ' has trailing spaces in raw report
+        # Note: 20260508 'Order/adjustment ID  ' change to 'Order/Adjustment ID'
+        header_order_names = ['Order/adjustment ID  ', 'Order/Adjustment ID']
+        header_order_name = None
+        for name in header_order_names:
+            if name in report_df.columns:
+                header_order_name = name
+                break
+
+        if header_order_name is None:
+            raise ValueError(f'Order/adjustment ID column not found in report. Found: {report_df.columns}')
+
         report_df = report_df[[
-            'Order/adjustment ID  ',
+            header_order_name,
             'Order created time',
             'Total Revenue'
         ]].copy()
+
+        # change header name to old header name  Order/adjustment ID
+        report_df = report_df.rename(columns={header_order_name: header_order_names[0]})
         
         # Add reconciliation columns (will be populated during finance_check)
         report_df['admin_record_file'] = pd.NA
