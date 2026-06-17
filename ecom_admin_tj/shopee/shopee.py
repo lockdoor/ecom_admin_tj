@@ -218,8 +218,15 @@ class Shopee(Base):
             to_day_sheet.column_dimensions['J'].width = 10  # ผู้ซื้อร้องขอใบกำกับภาษี  
             to_day_sheet.column_dimensions['K'].width = 25  # วันที่คาดว่าจะทำการจัดส่งสินค้า
             self._formating_header(to_day_sheet)
-            
-            
+            # highlight row order if 'หมายเลขคำสั่งซื้อ' in invoice_group_dict keys
+            from openpyxl.styles import PatternFill
+            order_request_tax = self.invoice_group_dict.keys()
+            for row in to_day_sheet.iter_rows(min_row=2):
+                order_number = row[0].value
+                if order_number in order_request_tax:
+                    for cell in row:
+                        cell.fill = PatternFill(start_color="FFEB00", end_color="FFEB00", fill_type="solid")
+
             # Sheet 3+: Each invoice
             for group_key, invoice_df in self.invoice_group_dict.items():
                 # Sanitize sheet name (Excel has max 31 chars and no special chars)
